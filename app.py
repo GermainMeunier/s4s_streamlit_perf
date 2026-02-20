@@ -4,6 +4,7 @@ import streamlit as st
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import textwrap
+import base64
 
 from io import BytesIO
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -205,6 +206,10 @@ def fig_to_png_bytes(fig) -> bytes:
     canvas.print_png(buf)  # surtout pas bbox_inches="tight" sinon taille variable
     return buf.getvalue()
 
+def png_bytes_to_data_uri(png_bytes: bytes) -> str:
+    b64 = base64.b64encode(png_bytes).decode("utf-8")
+    return f"data:image/png;base64,{b64}"
+
 # ================================
 # RADAR -> PNG (taille FIXE)
 # ================================
@@ -353,22 +358,28 @@ with col_left:
         st.markdown(f"<div style='font-size:20px;'>• {item}</div>", unsafe_allow_html=True)
 
 with col_right:
-    # Wrapper radar pour CSS ciblé + "spacer négatif" juste ici (le plus efficace)
-    st.markdown("<div class='radar-wrap'>", unsafe_allow_html=True)
-
-    # Remonte le bloc radar au max, sans toucher au bandeau
-    st.markdown("<div style='margin-top:-30px'></div>", unsafe_allow_html=True)
-
-    st.image(radar_png, use_container_width=True)
-
-    # Phrase collée sous le radar
+    # Wrapper radar (CSS ciblé)
     st.markdown(
         """
-        <div style="text-align:right; font-weight:800; margin-top:0px; padding-top:0px;">
-        Un score de 80 signifie que le joueur est meilleur que 80% des joueurs de même poste sur ce facteur de performance
-        </div>
+        <style>
+        .radar-wrap { margin-top: -50px; } /* augmente / diminue ici */
+        .radar-wrap img { display:block; width:100%; height:auto; margin:0 !important; }
+        .radar-caption { text-align:right; font-weight:800; margin-top:6px; }
+        </style>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    uri = png_bytes_to_data_uri(radar_png)
+
+    st.markdown(
+        f"""
+        <div class="radar-wrap">
+            <img src="{uri}" />
+            <div class="radar-caption">
+                Un score de 80 signifie que le joueur est meilleur que 80% des joueurs de même poste sur ce facteur de performance
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
