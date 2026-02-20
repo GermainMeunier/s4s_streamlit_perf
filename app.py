@@ -144,19 +144,6 @@ VAR_LABELS = {
 # ================================
 st.set_page_config(page_title="Performance & Profil", layout="wide")
 
-st.markdown("""
-<style>
-/* Cache l'en-tête Streamlit */
-header {visibility: hidden;}
-/* Cache le menu en bas */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-
-/* Optionnel : cache la barre de déploiement (selon version) */
-.stDeployButton {display:none;}
-</style>
-""", unsafe_allow_html=True)
-
 # Bandeau orange en haut
 st.markdown(
     """
