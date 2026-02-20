@@ -332,7 +332,7 @@ with col_left:
 
     poste, radar_values, radar_png = pizza_radar_by_poste(row)
 
-    st.markdown(f"<div style='font-size:30px; font-weight:700; margin-top:8px;'>{poste}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size:300px; font-weight:700; margin-top:8px;'>{poste}</div>", unsafe_allow_html=True)
 
     score_moyen = float(np.mean(radar_values)) if len(radar_values) else np.nan
     rank_txt = "—"
