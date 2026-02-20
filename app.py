@@ -201,7 +201,7 @@ def pizza_radar_by_poste(row: pd.Series):
     cmap = mpl.colormaps["RdYlGn"]
     colors = [cmap(v / 100) for v in values]
 
-    fig = plt.figure(figsize=(4, 4), dpi=150)
+    fig = plt.figure(figsize=(4, 4), dpi=130)
     ax = plt.subplot(111, polar=True)
     ax.set_theta_offset(np.pi / 2)
     ax.set_theta_direction(-1)
