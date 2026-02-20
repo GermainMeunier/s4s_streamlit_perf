@@ -249,7 +249,7 @@ def pizza_radar_by_poste(row: pd.Series):
     ax.set_theta_direction(-1)
 
     r_outer = 100
-    ax.set_ylim(0, r_outer + 20)
+    ax.set_ylim(0, r_outer + 10)
 
     grey = "#9aa0a6"
     ax.grid(False)
@@ -257,7 +257,7 @@ def pizza_radar_by_poste(row: pd.Series):
     ax.set_yticks([])
     ax.spines["polar"].set_visible(False)
 
-    ax.set_position([0.14, 0.14, 0.72, 0.72])  # fixe => rendu constant
+    ax.set_position([0.14, 0.24, 0.72, 0.72])  # fixe => rendu constant
 
     theta_dense = np.linspace(0, 2*np.pi, 800)
     for r in [25, 50, 75]:
@@ -370,7 +370,7 @@ with col_right:
         """
         <style>
         .radar-wrap { margin-top: -60px; } 
-        .radar-wrap img { display:block; width:100%; height:auto; margin:0 !important; }
+        .radar-wrap img { display:block; width:100%; height:auto; margin:0 ; }
         .radar-caption { text-align:right; font-weight:800; margin-top:6px; }
         </style>
         """,
