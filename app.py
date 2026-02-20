@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import streamlit as st
-import plotly.graph_objects as go
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import textwrap
 
 # ================================
-# CONFIGS
+# CONFIGS (Power BI)
 # ================================
 METRICS_BY_POSTE = {
     "avant-centre": [
@@ -44,10 +45,53 @@ METRICS_BY_POSTE = {
         ("Duel sol", "score_duel_def"),
         ("Intervention", "score_intervention"),
         ("Relance", "score_relance"),
-        ("Duel aérien", "score_impact"),  # conservé tel quel (comme votre code)
+        ("Duel aérien", "score_impact"),
         ("Projection", "score_projection"),
         ("Discipline", "score_discipline"),
     ],
+}
+
+LABEL_OVERRIDES_BY_POSTE = {
+    "avant-centre": {
+        "Finition": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Impact": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Dribble": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Déplacement": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Passe": {"r": 103, "dtheta": 0, "ha": "right"},
+        "Défense": {"r": 103, "dtheta": 0, "ha": "right"},
+    },
+    "ailier - offensif": {
+        "Dribble": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Passe": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Finition": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Présence": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Impact": {"r": 103, "dtheta": 0, "ha": "right"},
+        "Défense": {"r": 103, "dtheta": 0, "ha": "right"},
+    },
+    "milieu": {
+        "Présence": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Projection": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Impact": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Récuperation": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Danger": {"r": 103, "dtheta": 0, "ha": "right"},
+        "Technique": {"r": 103, "dtheta": 0, "ha": "right"},
+    },
+    "piston": {
+        "Défense": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Relance": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Progression": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Projection": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Centre": {"r": 103, "dtheta": 0, "ha": "right"},
+        "Impact": {"r": 103, "dtheta": 0, "ha": "right"},
+    },
+    "defenseur": {
+        "Duel sol": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Intervention": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Relance": {"r": 103, "dtheta": 0, "ha": "left"},
+        "Duel aérien": {"r": 105, "dtheta": 0, "ha": "center"},
+        "Projection": {"r": 103, "dtheta": 0, "ha": "right"},
+        "Discipline": {"r": 103, "dtheta": 0, "ha": "right"},
+    },
 }
 
 VAR_LABELS = {
@@ -95,23 +139,15 @@ VAR_LABELS = {
     "pct_pass_transversal_p90": "Passes transversales (90m)",
 }
 
-LOWER_IS_BETTER = {
-    "pct_yellow_card_p90",
-    "pct_faute_commise_p90",
-    "pct_carry_lost_pct",
-    "pct_erreur_opp_shot_p90",
-    "pct_offside_p90",
-}
-
 # ================================
-# STREAMLIT SETUP
+# APP SETUP
 # ================================
 st.set_page_config(page_title="Performance & Profil", layout="wide")
 
-# Bandeau orange (style Power BI)
+# Bandeau orange en haut
 st.markdown(
     """
-    <div style="background-color:#e6692e; padding:18px 12px; border-radius:6px; text-align:center;">
+    <div style="background-color:#e6692e; padding:18px 12px; text-align:center;">
       <div style="color:white; font-size:34px; font-weight:700; line-height:1.1;">
         Performance & profil – Ligue 1 – 2024/2025
       </div>
@@ -126,173 +162,176 @@ def load_csv(path: str) -> pd.DataFrame:
     df.columns = [c.strip() for c in df.columns]
     if "Unnamed: 0" in df.columns:
         df = df.drop(columns=["Unnamed: 0"])
-    if "poste" in df.columns:
-        df["poste"] = df["poste"].astype(str).str.strip().str.lower()
-    if "player" in df.columns:
-        df["player"] = df["player"].astype(str).str.strip()
+    df["poste"] = df["poste"].astype(str).str.strip().str.lower()
+    df["player"] = df["player"].astype(str).str.strip()
     return df
 
 df = load_csv("data/data.csv")
 
-# ================================
-# RADAR "PIZZA" (Plotly Barpolar)
-# ================================
-def build_radar_values(row: pd.Series):
-    poste = str(row.get("poste", "")).strip().lower()
-    if poste not in METRICS_BY_POSTE:
-        found = None
-        for k in METRICS_BY_POSTE.keys():
-            if k in poste:
-                found = k
-                break
-        poste = found or "defenseur"
+def _poste_fallback(poste: str) -> str:
+    poste = (poste or "").strip().lower()
+    if poste in METRICS_BY_POSTE:
+        return poste
+    for k in METRICS_BY_POSTE.keys():
+        if k in poste:
+            return k
+    return "defenseur"
 
+# ================================
+# RADAR (Matplotlib, identique Power BI)
+# ================================
+def pizza_radar_by_poste(row: pd.Series):
+    poste = _poste_fallback(str(row.get("poste", "")))
     metrics = METRICS_BY_POSTE[poste]
+    label_overrides = LABEL_OVERRIDES_BY_POSTE.get(poste, {})
+
     labels = [lab for lab, _ in metrics]
     pct_cols = [col + "_pct" for _, col in metrics]
 
-    values = []
-    for c in pct_cols:
-        v = pd.to_numeric(row.get(c, np.nan), errors="coerce")
-        values.append(float(v) if pd.notna(v) else 0.0)
-
+    values = np.array([pd.to_numeric(row.get(c, np.nan), errors="coerce") for c in pct_cols], dtype=float)
+    values = np.nan_to_num(values, nan=0.0)
     values = np.clip(values, 0, 100)
-    return poste, labels, values
 
-def pizza_radar_plotly(labels, values):
     N = len(values)
-    if N == 0:
-        return go.Figure()
-
-    # angles en degrés, offset proche de votre rendu (-30°)
-    angle_offset = -30
-    angles = (np.linspace(0, 360, N, endpoint=False) + angle_offset) % 360
-    width = 360 / N
+    angle_offset = np.deg2rad(-30)
+    angles = np.linspace(0, 2*np.pi, N, endpoint=False) + angle_offset
+    width = 2*np.pi / N
+    mid_angles = angles + width / 2
 
     cmap = mpl.colormaps["RdYlGn"]
-    colors = [mpl.colors.to_hex(cmap(v / 100.0)) for v in values]
+    colors = [cmap(v / 100) for v in values]
 
-    fig = go.Figure()
+    fig = plt.figure(figsize=(8, 8), dpi=150)
+    ax = plt.subplot(111, polar=True)
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_theta_direction(-1)
 
-    fig.add_trace(
-        go.Barpolar(
-            r=values,
-            theta=angles,
-            width=[width] * N,
-            marker_color=colors,
-            marker_line_color="#9aa0a6",
-            marker_line_width=1.2,
-            opacity=1.0,
-            hovertemplate="%{customdata}: %{r:.0f}<extra></extra>",
-            customdata=np.array(labels),
-        )
-    )
+    r_outer = 100
+    ax.set_ylim(0, r_outer + 5)
 
-    # Style général (proche Power BI)
-    fig.update_layout(
-        showlegend=False,
-        margin=dict(l=30, r=30, t=20, b=20),
-        polar=dict(
-            bgcolor="white",
-            radialaxis=dict(range=[0, 100], showticklabels=False, ticks="", showgrid=True, gridcolor="rgba(154,160,166,0.25)"),
-            angularaxis=dict(
-                rotation=90,      # place le 0° en haut
-                direction="clockwise",
-                tickmode="array",
-                tickvals=angles,
-                ticktext=labels,
-                tickfont=dict(size=12),
-                showgrid=True,
-                gridcolor="rgba(154,160,166,0.35)",
-            ),
-        ),
-    )
-    return fig
+    grey = "#9aa0a6"
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_position([0.08, 0.08, 0.84, 0.78])
+    ax.spines["polar"].set_visible(False)
+
+    theta_dense = np.linspace(0, 2*np.pi, 800)
+    for r in [25, 50, 75]:
+        ax.plot(theta_dense, np.full_like(theta_dense, r), lw=1, alpha=0.25, color=grey)
+
+    for th in np.append(angles, angles[0]):
+        ax.plot([th, th], [0, r_outer + 3], color=grey, lw=1, alpha=0.35)
+
+    ax.bar(angles, values, width=width, bottom=0, align="edge",
+           color=colors, edgecolor=grey, linewidth=1.2)
+
+    ax.plot(theta_dense, np.full_like(theta_dense, r_outer), color="#222222", lw=1.1)
+
+    for th, v in zip(mid_angles, values):
+        ax.text(th, min(v + 3, r_outer - 3), f"{int(v)}",
+                ha="center", va="center", fontsize=11, fontweight="bold")
+
+    base_r = r_outer + 2
+    for lab, th in zip(labels, mid_angles):
+        ov = label_overrides.get(lab, {})
+        ax.text(th, ov.get("r", base_r), lab,
+                ha=ov.get("ha", "center"), va="center", fontsize=12)
+
+    fig.subplots_adjust(left=0.10, right=0.90, top=0.88, bottom=0.10)
+    return poste, values, fig
 
 # ================================
-# FORCES / FAIBLESSES (toujours 5/5)
+# FORCES / FAIBLESSES (liste 5/5)
 # ================================
-def strengths_weaknesses_from_row_always5(row: pd.Series, max_items=5):
-    pct_cols = [c for c in row.index if str(c).startswith("pct_")]
+def strengths_weaknesses_always5(row: pd.Series, max_items=5):
+    pct_cols = [c for c in row.index if str(c).startswith("pct_") and not str(c).startswith("pct_score")]
 
-    items = []
+    vals = []
     for c in pct_cols:
-        raw = pd.to_numeric(row.get(c, np.nan), errors="coerce")
-        if pd.isna(raw):
+        v = pd.to_numeric(row.get(c, np.nan), errors="coerce")
+        if pd.isna(v):
             continue
-        # normaliser "plus haut = mieux"
-        score = 100.0 - float(raw) if c in LOWER_IS_BETTER else float(raw)
-        items.append((c, score, float(raw)))
+        vals.append((c, float(v)))
 
-    if not items:
+    if not vals:
         return [], []
 
-    items_sorted = sorted(items, key=lambda x: x[1], reverse=True)
+    vals_sorted = sorted(vals, key=lambda x: x[1], reverse=True)
 
-    forces = items_sorted[:max_items]
-    faiblesses = items_sorted[-max_items:]  # les pires
-    faiblesses = list(reversed(faiblesses))  # afficher du "moins bon" au "moins moins bon"
+    forces = vals_sorted[:max_items]
+    faiblesses = list(reversed(vals_sorted[-max_items:]))
 
     def label(col):
         return VAR_LABELS.get(col, col.replace("pct_", "").replace("_", " "))
 
-    forces_lbl = [label(c) for c, _, _ in forces]
-    faib_lbl = [label(c) for c, _, _ in faiblesses]
-    return forces_lbl, faib_lbl
+    return [label(c) for c, _ in forces], [label(c) for c, _ in faiblesses]
 
 # ================================
-# UI
+# UI LAYOUT EXACT (gauche infos, droite radar, phrase bas droite)
 # ================================
 st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
-player = st.selectbox("Joueur", sorted(df["player"].unique()))
+# 2 colonnes: gauche (contrôles + textes), droite (radar + phrase)
+col_left, col_right = st.columns([1.15, 1.35], vertical_alignment="top")
 
-row_df = df[df["player"] == player]
-if row_df.empty:
-    st.warning("Aucune donnée pour ce joueur.")
-    st.stop()
+with col_left:
+    # Choix joueur en haut à gauche
+    player = st.selectbox("Joueur", sorted(df["player"].unique()))
 
-row = row_df.iloc[0]
-poste, labels, values = build_radar_values(row)
+    row_df = df[df["player"] == player]
+    if row_df.empty:
+        st.warning("Aucune donnée pour ce joueur.")
+        st.stop()
+    row = row_df.iloc[0]
 
-left, right = st.columns([1.15, 1])
+    poste, radar_values, fig_radar = pizza_radar_by_poste(row)
 
-with left:
-    st.subheader(poste)
+    # Poste dessous
+    st.markdown(f"<div style='font-size:30px; font-weight:700; margin-top:8px;'>{poste}</div>", unsafe_allow_html=True)
+
+    # Score moyen + classement sur la même ligne
+    score_moyen = float(np.mean(radar_values)) if len(radar_values) else np.nan
+    rank_txt = "—"
+    if "global_rank" in row.index and "global_n" in row.index:
+        try:
+            rank_txt = f"{int(row['global_rank'])} / {int(row['global_n'])}"
+        except Exception:
+            rank_txt = "—"
 
     k1, k2 = st.columns(2)
-    score_moyen = float(np.mean(values)) if len(values) else np.nan
-
     with k1:
-        st.metric("Score moyen", f"{score_moyen:.2f}" if not np.isnan(score_moyen) else "—")
+        st.markdown("<div style='font-weight:700; text-decoration:underline;'>Score moyen</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:64px; font-weight:800;'>{score_moyen:.1f}</div>", unsafe_allow_html=True)
     with k2:
-        if "global_rank" in row.index and "global_n" in row.index:
-            try:
-                st.metric("Classement", f"{int(row['global_rank'])} / {int(row['global_n'])}")
-            except Exception:
-                st.metric("Classement", "—")
-        else:
-            st.metric("Classement", "—")
+        st.markdown("<div style='font-weight:700; text-decoration:underline;'>Classement</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:64px; font-weight:800;'>{rank_txt}</div>", unsafe_allow_html=True)
 
-    forces, faiblesses = strengths_weaknesses_from_row_always5(row, max_items=5)
+    # Forces / Faiblesses listes
+    forces, faiblesses = strengths_weaknesses_always5(row, max_items=5)
 
-    st.markdown("### Forces :")
-    if forces:
-        for x in forces:
-            st.markdown(f"- {x}")
-    else:
-        st.write("—")
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
 
-    st.markdown("### Faiblesses :")
-    if faiblesses:
-        for x in faiblesses:
-            st.markdown(f"- {x}")
-    else:
-        st.write("—")
+    st.markdown("<div style='color:#0b7a3b; font-size:28px; font-weight:800;'>Forces :</div>", unsafe_allow_html=True)
+    for item in forces:
+        st.markdown(f"<div style='font-size:20px;'>• {item}</div>", unsafe_allow_html=True)
 
-with right:
-    st.markdown("### Radar")  # évite le "undefined"
-    fig = pizza_radar_plotly(labels, values)
-    st.plotly_chart(fig, use_container_width=True)
+    st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
-st.caption("Un score de 80 signifie que le joueur est meilleur que 80% des joueurs de même poste sur ce facteur de performance.")
+    st.markdown("<div style='color:#b22222; font-size:28px; font-weight:800;'>Faiblesses :</div>", unsafe_allow_html=True)
+    for item in faiblesses:
+        st.markdown(f"<div style='font-size:20px;'>• {item}</div>", unsafe_allow_html=True)
+
+with col_right:
+    # Radar prend tout le côté droit
+    st.pyplot(fig_radar, clear_figure=True, use_container_width=True)
+
+    # Phrase en bas à droite sous le radar
+    st.markdown(
+        """
+        <div style="text-align:right; font-weight:800; margin-top:10px;">
+        Un score de 80 signifie que le joueur est meilleur que 80% des joueurs de même poste sur ce facteur de performance
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
