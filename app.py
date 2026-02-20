@@ -243,9 +243,9 @@ def pizza_radar_by_poste(row: pd.Series):
 
     for th, v in zip(mid_angles, values):
         ax.text(th, min(v + 3, r_outer - 3), f"{int(v)}",
-                ha="center", va="center", fontsize=11, fontweight="bold")
+                ha="center", va="center", fontsize=9)
 
-    base_r = r_outer + 2
+    base_r = r_outer + 8
     for lab, th in zip(labels, mid_angles):
         ov = label_overrides.get(lab, {})
         ax.text(th, ov.get("r", base_r), lab,
