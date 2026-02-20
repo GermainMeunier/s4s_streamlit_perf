@@ -336,11 +336,17 @@ with col_left:
         st.markdown(f"<div style='font-size:20px;'>• {item}</div>", unsafe_allow_html=True)
 
 with col_right:
+
+    # Radar en haut
     st.image(radar_png, use_container_width=True)
 
+    # Espace contrôlé
+    st.markdown("<div style='height:40px;'></div>", unsafe_allow_html=True)
+
+    # Phrase en bas
     st.markdown(
         """
-        <div style="text-align:right; font-weight:800; margin-top:10px;">
+        <div style="text-align:right; font-weight:800;">
         Un score de 80 signifie que le joueur est meilleur que 80% des joueurs de même poste sur ce facteur de performance
         </div>
         """,
