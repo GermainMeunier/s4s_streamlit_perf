@@ -244,7 +244,7 @@ def pizza_radar_by_poste(row: pd.Series):
     # valeurs
     for th, v in zip(mid_angles, values):
         ax.text(th, min(v + 3, r_outer - 3), f"{int(v)}",
-                ha="center", va="center", fontsize=10, fontweight="bold")
+                ha="center", va="center", fontsize=8)
 
     # labels
     base_r = r_outer + 10
@@ -253,7 +253,7 @@ def pizza_radar_by_poste(row: pd.Series):
         r_lab = ov.get("r", base_r)
         ax.text(th, r_lab, lab,
                 ha=ov.get("ha", "center"), va="center",
-                fontsize=20, clip_on=False)
+                fontsize=12, clip_on=False)
 
     png = fig_to_png_bytes(fig)
     plt.close(fig)
@@ -290,7 +290,7 @@ def strengths_weaknesses_always5(row: pd.Series, max_items=5):
 # ================================
 st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
 
-col_left, col_right = st.columns([1.25, 1.25], vertical_alignment="top")
+col_left, col_right = st.columns([1.15, 1.35], vertical_alignment="top")
 
 with col_left:
     player = st.selectbox("Joueur", sorted(df["player"].unique()))
