@@ -341,7 +341,7 @@ with col_right:
     st.image(radar_png, use_container_width=True)
 
     # Espace contrôlé
-    st.markdown("<div style='height:40px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
 
     # Phrase en bas
     st.markdown(
