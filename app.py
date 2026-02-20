@@ -222,7 +222,7 @@ def pizza_radar_by_poste(row: pd.Series):
     ax.spines["polar"].set_visible(False)
 
     # ---- AXE: position FIXE
-    ax.set_position([0.08, 0.08, 0.84, 0.84])
+    ax.set_position([0.15, 0.15, 0.75, 0.75])
 
     theta_dense = np.linspace(0, 2*np.pi, 800)
     for r in [25, 50, 75]:
@@ -256,8 +256,10 @@ def pizza_radar_by_poste(row: pd.Series):
             ha=ov.get("ha", "center"),
             va="center",
             fontsize=13,
-            clip_on=True  # empêche que ça change la bbox de la figure
+            clip_on=False
         )
+
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
 
     return poste, values, fig
 
