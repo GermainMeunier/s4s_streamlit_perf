@@ -357,7 +357,7 @@ with col_right:
     st.markdown("<div class='radar-wrap'>", unsafe_allow_html=True)
 
     # Remonte le bloc radar au max, sans toucher au bandeau
-    st.markdown("<div style='margin-top:-14px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top:-30px'></div>", unsafe_allow_html=True)
 
     st.image(radar_png, use_container_width=True)
 
