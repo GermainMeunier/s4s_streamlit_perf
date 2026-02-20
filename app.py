@@ -202,7 +202,7 @@ def pizza_radar_by_poste(row: pd.Series):
     colors = [cmap(v / 100) for v in values]
 
     # ---- FIGURE: taille FIXE (important)
-    fig = plt.figure(figsize=(4.0, 4.0), dpi=130)
+    fig = plt.figure(figsize=(4.5, 4.5), dpi=110)
     fig.set_constrained_layout(False)
 
     ax = plt.subplot(111, polar=True)
@@ -211,7 +211,7 @@ def pizza_radar_by_poste(row: pd.Series):
 
     r_outer = 100
 
-    # ---- espace réservé pour les labels (important)
+    # ---- espace réservé pour les labels
     label_pad = 18
     ax.set_ylim(0, r_outer + label_pad)
 
@@ -238,24 +238,22 @@ def pizza_radar_by_poste(row: pd.Series):
 
     ax.plot(theta_dense, np.full_like(theta_dense, r_outer), color="#222222", lw=1.1)
 
-    # ---- valeurs: plus petites
+    # ---- valeurs
     for th, v in zip(mid_angles, values):
         ax.text(th, min(v + 3, r_outer - 3), f"{int(v)}",
-                ha="center", va="center", fontsize=8, fontweight="bold")
+                ha="center", va="center", fontsize=8)
 
-    # ---- labels: éloignés + NO CLIP bbox (stabilité)
-    base_r = r_outer + 10
+    # ---- labels
+    base_r = r_outer + 5
     for lab, th in zip(labels, mid_angles):
         ov = label_overrides.get(lab, {})
-
-        # applique override SI présent, mais en restant dans la zone visible
         r_lab = ov.get("r", base_r)
 
         ax.text(
             th, r_lab, lab,
             ha=ov.get("ha", "center"),
             va="center",
-            fontsize=13,
+            fontsize=12,
             clip_on=False
         )
 
