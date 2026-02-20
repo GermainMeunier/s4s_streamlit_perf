@@ -362,7 +362,7 @@ with col_right:
     st.markdown(
         """
         <style>
-        .radar-wrap { margin-top: -50px; } /* augmente / diminue ici */
+        .radar-wrap { margin-top: -100px; } 
         .radar-wrap img { display:block; width:100%; height:auto; margin:0 !important; }
         .radar-caption { text-align:right; font-weight:800; margin-top:6px; }
         </style>
