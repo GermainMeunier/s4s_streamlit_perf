@@ -337,16 +337,16 @@ with col_left:
 
 with col_right:
 
-    # Radar en haut
-    st.image(radar_png, use_container_width=True)
-
-    # Espace contrôlé
+    # Décalage vertical pour aligner avec le selectbox
     st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
 
-    # Phrase en bas
+    # Radar
+    st.image(radar_png, use_container_width=True)
+
+    # Phrase
     st.markdown(
         """
-        <div style="text-align:right; font-weight:800;">
+        <div style="text-align:right; font-weight:800; margin-top:10px;">
         Un score de 80 signifie que le joueur est meilleur que 80% des joueurs de même poste sur ce facteur de performance
         </div>
         """,
